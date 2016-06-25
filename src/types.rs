@@ -5,7 +5,10 @@ use std::hash::Hash;
 use std::str::{from_utf8, Utf8Error};
 use std::collections::{HashMap, HashSet};
 use std::convert::From;
+#[cfg(feature = "rustc-serialize")]
 use serialize::json;
+#[cfg(feature = "serde_json")]
+use serde_json;
 
 
 /// Helper enum that is used in some situations to describe
@@ -554,10 +557,19 @@ impl<T: ToRedisArgs> ToRedisArgs for Option<T> {
     }
 }
 
+#[cfg(feature = "rustc-serialize")]
 impl ToRedisArgs for json::Json {
     fn to_redis_args(&self) -> Vec<Vec<u8>> {
         // XXX: the encode result needs to be handled properly
         vec![json::encode(self).unwrap().into_bytes()]
+    }
+}
+
+#[cfg(feature = "serde_json")]
+impl ToRedisArgs for serde_json::Value {
+    fn to_redis_args(&self) -> Vec<Vec<u8>> {
+        // XXX: the encode result needs to be handled properly
+        vec![serde_json::ser::to_string(self).unwrap().into_bytes()]
     }
 }
 
@@ -890,11 +902,27 @@ impl FromRedisValue for InfoDict {
     }
 }
 
+#[cfg(feature = "rustc-serialize")]
 impl FromRedisValue for json::Json {
     fn from_redis_value(v: &Value) -> RedisResult<json::Json> {
         let rv = match *v {
             Value::Data(ref b) => json::Json::from_str(try!(from_utf8(b))),
             Value::Status(ref s) => json::Json::from_str(s),
+            _ => invalid_type_error!(v, "Not JSON compatible"),
+        };
+        match rv {
+            Ok(value) => Ok(value),
+            Err(_) => invalid_type_error!(v, "Not valid JSON"),
+        }
+    }
+}
+
+#[cfg(feature = "serde_json")]
+impl FromRedisValue for serde_json::Value {
+    fn from_redis_value(v: &Value) -> RedisResult<serde_json::Value> {
+        let rv = match *v {
+            Value::Data(ref b) => serde_json::from_str(try!(from_utf8(b))),
+            Value::Status(ref s) => serde_json::from_str(s),
             _ => invalid_type_error!(v, "Not JSON compatible"),
         };
         match rv {

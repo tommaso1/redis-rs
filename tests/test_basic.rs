@@ -1,5 +1,8 @@
 extern crate redis;
+#[cfg(feature = "rustc-serialize")]
 extern crate rustc_serialize as serialize;
+#[cfg(feature = "serde_json")]
+extern crate serde_json;
 
 use redis::{Commands, PipelineCommands};
 
@@ -240,8 +243,9 @@ fn test_optionals() {
     assert_eq!(a, 0i32);
 }
 
+#[cfg(feature = "rustc-serialize")]
 #[test]
-fn test_json() {
+fn test_serialize_json() {
     use serialize::json::Json;
 
     let ctx = TestContext::new();
@@ -254,6 +258,24 @@ fn test_json() {
         Json::U64(1),
         Json::U64(2),
         Json::U64(3),
+    ]));
+}
+
+#[cfg(feature = "serde_json")]
+#[test]
+fn test_serde_json() {
+    use serde_json::Value;
+
+    let ctx = TestContext::new();
+    let con = ctx.connection();
+
+    redis::cmd("SET").arg("foo").arg("[1, 2, 3]").execute(&con);
+
+    let json : Value = redis::cmd("GET").arg("foo").query(&con).unwrap();
+    assert_eq!(json, Value::Array(vec![
+        Value::U64(1),
+        Value::U64(2),
+        Value::U64(3),
     ]));
 }
 

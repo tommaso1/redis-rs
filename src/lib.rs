@@ -305,7 +305,10 @@
 #![deny(non_camel_case_types)]
 
 extern crate url;
+#[cfg(feature = "rustc-serialize")]
 extern crate rustc_serialize as serialize;
+#[cfg(feature = "serde_json")]
+extern crate serde_json;
 extern crate sha1;
 
 #[cfg(feature="unix_socket")]

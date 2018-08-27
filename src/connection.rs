@@ -642,6 +642,13 @@ impl<'a> PubSub<'a> {
     pub fn set_read_timeout(&self, dur: Option<Duration>) -> RedisResult<()> {
         self.con.set_read_timeout(dur)
     }
+
+
+    pub fn publish_str(&self, message: &str, channel: &str) -> RedisResult<()> {
+        cmd("PUBLISH").arg(channel).arg(message).query(self.con)?;
+        Ok(())
+    }
+
 }
 
 impl<'a> Drop for PubSub<'a> {

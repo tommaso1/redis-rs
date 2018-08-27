@@ -363,6 +363,7 @@ fn test_pubsub() {
 
     // Connection for subscriber api
     let mut pubsub_con = ctx.connection();
+    let mut pubsub_send_con = ctx.connection();
 
     // Barrier is used to make test thread wait to publish
     // until after the pubsub thread has subscribed.
@@ -385,7 +386,8 @@ fn test_pubsub() {
     });
 
     let _ = barrier.wait();
-    redis::cmd("PUBLISH").arg("foo").arg(42).execute(&con);
+//    redis::cmd("PUBLISH").arg("foo").arg(42).execute(&con);
+    pubsub_send_con.as_pubsub().publish_str("42", "foo");
     // We can also call the command directly
     assert_eq!(con.publish("foo", 23), Ok(1));
 

@@ -643,7 +643,7 @@ impl<'a> PubSub<'a> {
         self.con.set_read_timeout(dur)
     }
 
-
+    /// Sends given message to specified channel
     pub fn publish_str(&self, message: &str, channel: &str) -> RedisResult<()> {
         cmd("PUBLISH").arg(channel).arg(message).query(self.con)?;
         Ok(())
